@@ -1,9 +1,69 @@
-1. При создании объекта File при передаче параметра filename без расширения поле extension получает значение filename
-2. При создании объекта File при передаче параметра content длиной 1 элемент поле size типа double становится равным 0,5, при попытке получить значение этого поля возвращается 0
-3. При создании объекта File при передаче в качестве параметра filename пустой строки объект создается, но не должен
-4. Конструктор объекта FileStorage позволяет создать объект с отрицательным или нулевым значением параметра size
-5. При создании объекта FileStorage с параметром size поле availableSize получает значение size+100, а должно становиться равным size
-6. При создании объекта FileStorage с параметром size, равным Integer.MAX_VALUE+1 и более, поле maxSize принимает значение -size,
-а поле availableSize принимает значение -size+100
+ID: 1
+   Summary: Класс File. Конструктор File(String filename, String content) может принять значение filename без расширения.
 
+   Steps to reproduce: File newFile = new File("src/Files/test3", "");
 
+   Actual result: Объект был создан, поле extension получило значение "src/Files/test3";
+
+   Expected result: Сообщение об ошибке: "There is no extension in filename";
+
+ID: 2
+   Summary: Класс File. После создания объекта File() с параметром content длиной 1 элемент при ывзове метода getSize возвращается значение 0
+
+   Steps to reproduce: File newFile = new File("src/Files/test3", "");
+                       int size = newFile.getSize();
+
+   Actual result: size == 0;
+
+   Expected result: size == 1;
+
+ID: 3
+   Summary: Класс File. Конструктор File(String filename, String content) может принять пустое значение filename.
+
+   Steps to reproduce: File newFile = new File("", "qwerty");
+
+   Actual result: Объект был создан, поле filename получило значение "";
+
+   Expected result: Сообщение об ошибке: "Filename can't be empty";
+
+ID: 4
+   Summary: Class FileStorage. Конструктор FileStorage(int size) может принять нулевое или отрицательное значение.
+
+   Steps to reproduce: FileStorage testFS = new FileStorage(0);
+
+   Actual result: Объект был создан;
+
+   Expected result: Сообщение об ошибке: "Size can't be less than 1";
+
+ID: 5
+   Summary: Class FileStorage. При создании объекта FileStorage с параметром size поле availableSize получает значение size+100.
+
+   Steps to reproduce: FileStorage testFS = new FileStorage(100);
+                       int avSize = testFS.getAvailableSize();
+   Actual result: avSize == 200;
+
+   Expected result: avSize == 100;
+
+ID: 6
+   Summary: Class FileStorage. При создании объекта FileStorage с параметром size, равным Integer.MAX_VALUE+1 и более, поле maxSize принимает значение -size,
+   а поле availableSize принимает значение -size+100
+
+   Steps to reproduce: FileStorage testFS = new FileStorage(Integer.MAX_VALUE+1);
+                       int mSize = testFS.getMaxSize();
+                       int avSize = testFS.getAvailableSize();
+
+   Actual result: mSize == -Integer.MAX_VALUE
+   avSize == -Integer.MAX_VALUE+100;
+
+   Expected result: mSize = Integer.MAX_VALUE+1
+   avSize == Integer.MAX_VALUE+1;
+
+ID: 7
+   Summary: Class FileStorage. Метод write(File file) позволяет записать файл с размером контента, превышающего availableSize объекта FileStorage
+
+   Steps to reproduce: FileStorage testFS = new FileStorage(5);
+                       testFS.write(new File("src/Files/test3", "12345678900987654321"));
+
+   Actual result: Файл записан в хранилище;
+
+   Expected result: Сообщение об ошибке: "There is not enough availableSize";

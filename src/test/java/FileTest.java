@@ -1,117 +1,138 @@
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.reflect.Field;
-
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.assertFalse;
 
 public class FileTest {
+    private String testFilename = "src/Files/test1.txt";
+    private String testContent = "qwerty";
 
-    @DataProvider(name = "dataForFileTest")
-    public static Object[][] testDataForFiles() {
-        return new Object[][]{{"src/Files/test1.txt", "qwerty"}};
+
+    @Test
+    public void testGetExtension() {
+        String extension = testFilename.substring(testFilename.trim().lastIndexOf('.') + 1);
+        assertEquals(new File(testFilename, testContent).getExtension(), extension, "Bad work in getExtension, didn't return expected extension");
     }
 
 
-    @Test(dataProvider = "dataForFileTest")
-    // @Parameters(value = {"path", "content"})
-    public void testGetExtension(String path, String content) {
-        String extension = path.substring(path.trim().lastIndexOf('.') + 1);
-        assertEquals(new File(path, content).getExtension(), extension, "Bad work in getExtension");
+    @Test
+    public void testGetSize() {
+        assertEquals(new File(testFilename, testContent).getSize(), testContent.length() / 2, "Bad work in getSize, didn't return expected size");
     }
 
-
-    @Test(dataProvider = "dataForFileTest")
-    public void testGetSize(String path, String content) {
-        assertEquals(new File(path, content).getSize(), content.length() / 2, "Bad work in getSize");
+    @Test
+    public void testGetContent() {
+        assertEquals(new File(testFilename, testContent).getContent(), testContent, "Bad work in getContent, didn't return expected content");
     }
 
-    @Test(dataProvider = "dataForFileTest")
-    public void testGetContent(String path, String content) {
-        assertEquals(new File(path, content).getContent(), content, "Bad work in getContent");
-    }
-
-    @Test(dataProvider = "dataForFileTest")
-    public void testGetFilename(String path, String content) {
-        assertEquals(new File(path, content).getFilename(), path, "Bad work in getFileName");
-    }
-
-    public int getNumberByRelfect(File testFile, String fieldName) throws NoSuchFieldException, IllegalAccessException {
-        Field field = testFile.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        return ((Double) field.get(testFile)).intValue();
-    }
-
-    public String getStringByRelfect(File testFile, String fieldName) throws NoSuchFieldException, IllegalAccessException {
-        Field field = testFile.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        return (String) field.get(testFile);
+    @Test
+    public void testGetFilename() {
+        assertEquals(new File(testFilename, testContent).getFilename(), testFilename, "Bad work in getFileName, didn't return expected filename");
     }
 
     @DataProvider(name = "dataForTestConstructor")
     public static Object[][] testDataForGetSize() {
-        return new Object[][]{{"src/Files/test1.txt", "qwerty"}, {"", "zxcvbnmlk"}, {"src/Files/test3", "h"}};
+        return new Object[][]{{"src/Files/test1.txt", "qwerty"}, {"", "zxcvbnmlk"}, {"src/Files/test3", ""}};
     }
 
     @Test(dataProvider = "dataForTestConstructor")
-    public void testConstructorSetSize(String path, String content) {
+    public void testConstructorSize(String path, String content) {
         File testFile = new File(path, content);
         int testSize = 0;
         try {
-            testSize = getNumberByRelfect(testFile, "size");
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            System.out.println("Something went wrong in testing File constructor");
+            testSize = ReflectAccess.getNumberByRelfectForFile(testFile, "size");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing  constructor File(field size)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing  constructor File(field size)");
         }
-        if (content.length() > 1) {
-            assertEquals(testSize, content.length() / 2, "Bad work in constructor File(field size)");
-        } else {
-            assertEquals(testSize, 1, "Bad work in constructor File(field size)");
-        }
+        assertEquals(testSize, content.length() / 2, "Bad work in constructor File(field size), size doesn't equal a half of content");
     }
 
+    @Test
+    public void testConstructorSize1() {
+        File testFile = new File(testFilename, "1");
+        int testSize = 0;
+        try {
+            testSize = ReflectAccess.getNumberByRelfectForFile(testFile, "size");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing  constructor File(field size)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing  constructor File(field size)");
+        }
+        assertEquals(testSize, 1, "Bad work in constructor File(field size), when content length equals 1");
+    }
+
+
     @Test(dataProvider = "dataForTestConstructor")
-    public void testConstructorSetExtension(String path, String content) {
+    public void testConstructorExtension(String path, String content) {
         File testFile = new File(path, content);
         String extByReflect = null;
         try {
-            extByReflect = getStringByRelfect(testFile, "extension");
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            System.out.println("Something went wrong in testing File constructor");
+            extByReflect = ReflectAccess.getStringByRelfectForFile(testFile, "extension");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing  constructor File(field extension)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing  constructor File(field extension)");
         }
         String testExt = path.substring(path.trim().lastIndexOf('.') + 1);
-        if (testExt.equals(path)) {
-            fail("There is no extension in path");
-        } else {
-            assertEquals(extByReflect, testExt, "Bad work in constructor File(field extension)");
-        }
+        assertEquals(extByReflect, testExt, "Bad work in constructor File(field extension), didn't save the expected extension");
     }
 
     @Test(dataProvider = "dataForTestConstructor")
-    public void testConstructorSetFilename(String path, String content) {
+    public void testConstructorExtensionEquals(String path, String content) {
+        File testFile = new File(path, content);
+        String extByReflect = null;
+        try {
+            extByReflect = ReflectAccess.getStringByRelfectForFile(testFile, "extension");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing  constructor File(field extension)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing  constructor File(field extension)");
+        }
+        assertFalse(extByReflect.equals(path), "There is no extension in path");
+    }
+
+    @Test(dataProvider = "dataForTestConstructor")
+    public void testConstructorFilename(String path, String content) {
         File testFile = new File(path, content);
         String fileName = null;
         try {
-            fileName = getStringByRelfect(testFile, "filename");
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            System.out.println("Something went wrong in testing File constructor");
+            fileName = ReflectAccess.getStringByRelfectForFile(testFile, "filename");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing  constructor File(field filename)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing  constructor File(field filename)");
         }
-        if (fileName.equals("")) {
-            fail("Filename cant be empty");
-        } else {
-            assertEquals(fileName, path, "Bad work in constructor File(field filename)");
+        assertEquals(fileName, path, "Bad work in constructor File(field filename), didn't save the expected filename");
+    }
+
+    @Test
+    public void testConstructorFilenameEquals() {
+        File testFile = new File("", testContent);
+        String fileName = null;
+        try {
+            fileName = ReflectAccess.getStringByRelfectForFile(testFile, "filename");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing  constructor File(field filename)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing  constructor File(field filename)");
         }
+        assertFalse(fileName.equals(""), "Filename cant be empty");
     }
 
     @Test(dataProvider = "dataForTestConstructor")
-    public void testConstructorSetContent(String path, String content) {
+    public void testConstructorContent(String path, String content) {
         File testFile = new File(path, content);
         String testContent = null;
         try {
-            testContent = getStringByRelfect(testFile, "content");
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            System.out.println("Something went wrong in testing File constructor");
+            testContent = ReflectAccess.getStringByRelfectForFile(testFile, "content");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing  constructor File(field content)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing  constructor File(field content)");
         }
-        assertEquals(testContent, content, "Bad work in constructor File(field content)");
+        assertEquals(testContent, content, "Bad work in constructor File(field content), didn't save the expected content");
     }
 }

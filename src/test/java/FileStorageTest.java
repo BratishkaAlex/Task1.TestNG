@@ -1,186 +1,202 @@
 import exception.FileAlreadyExistsException;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 
 public class FileStorageTest {
+    private FileStorage testFS;
+    private File testFile;
+    private ArrayList<File> testFiles;
+    private int defaultSize = 10;
+    private String defaultFilename = "src/Files/test1.txt";
+    private String defaultContent = "qwerty";
 
-    /*@DataProvider(name = "testWrite")
-    public static Object[][] testDataForWrite() {
-        return new Object[][]{{100, "src/Files/test1.txt", "qwerty"}, {2, "src/Files/test2.txt", "ytredfgdfgwq"}, {-4, "src/Files/test3.txt", "hello"}};
-    }*/
-
-
-    @DataProvider(name = "testFileStorage")
-    public static Object[][] testFileStorage() {
-        return new Object[][]{{100, "src/Files/test1.txt", "qwerty"}};
+    @BeforeMethod
+    public void initTestData() {
+        testFS = new FileStorage(defaultSize);
+        testFile = new File(defaultFilename, defaultContent);
+        testFiles = new ArrayList<>();
+        testFiles.add(testFile);
+        try {
+            ReflectAccess.reflectWriteListForFileStorage(testFS, testFiles);
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in initializing test data");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in initializing test data");
+        }
     }
 
-    @Test(dataProvider = "testFileStorage")
-    //@Parameters(value = {"size", "path", "content"})
-    public void testWrite(int size, String path, String content) {
-        FileStorage testFS = new FileStorage(size);
-        boolean status = false;
+    @Test
+    public void testWrite() {
         try {
-            status = testFS.write(new File(path, content));
+            assertTrue(testFS.write(new File(defaultFilename, defaultContent)), "Bad work in write, file was not added");
         } catch (FileAlreadyExistsException e) {
-            System.out.println("FileAlreadyExistsException");
+            System.out.println("FileAlreadyExistsException in write");
         }
-        assertEquals(status, true, "Bad work in write");
     }
 
-    @Test(dataProvider = "testFileStorage")
-    public void testWriteNG(int size, String path, String content) {
-        FileStorage testFS = new FileStorage(size);
-        File testFile = new File(path, content);
+    @Test
+    public void testWriteBigContent() {
         try {
-            testFS.write(testFile);
-            testFS.write(testFile);
-            fail("File already exists, but added");
+            assertFalse(testFS.write(new File(defaultFilename, "12345678900987654321qwertyuioppoiuytrewq")),
+                    "Bad work in write, file added when there is not enough availableSize");
         } catch (FileAlreadyExistsException e) {
+            System.out.println("FileAlreadyExistsException in write big content");
         }
     }
 
-    @Test(dataProvider = "testFileStorage")
-    public void testIsExists(int size, String path, String content) {
-        FileStorage testFS = new FileStorage(size);
-        ArrayList<File> files = new ArrayList<>();
-        File testFile = new File(path, content);
-        files.add(testFile);
+    @Test
+    public void testWriteNG() {
         try {
-            reflectAccess(testFS, files);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            System.out.println("Something went wrong in isExists");
+            assertFalse(testFS.write(testFile), "File already exists, but added");
+        } catch (FileAlreadyExistsException e) {
+            System.out.println("FileAlreadyExistsException in writeNG");
         }
-        assertEquals(testFS.isExists(path), files.contains(testFile), "Bad work in isExists");
     }
 
-    @Test(dataProvider = "testFileStorage")
-    public void testDelete(int size, String path, String content) {
-        FileStorage testFS = new FileStorage(size);
-        ArrayList<File> files = new ArrayList<>();
-        File testFile = new File(path, content);
-        files.add(testFile);
-        files.add(testFile);
+    @Test
+    public void testIsExists() {
+        assertTrue(testFS.isExists(defaultFilename), "Bad work in isExists, fexists, but wasn't found");
+    }
+
+    @Test
+    public void testIsExistsNG() {
+        assertFalse(testFS.isExists(defaultFilename + "new"), "Bad work in isExistsNG, file doesn't exist, but found");
+    }
+
+    @Test
+    public void testDelete() {
+        testFS.delete(defaultFilename);
+        ArrayList files = null;
         try {
-            reflectAccess(testFS, files);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            System.out.println("Something went wrong in delete");
+            files = ReflectAccess.getFilesForFileStorage(testFS);
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testDelete");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testDelete");
         }
-        assertEquals(testFS.delete(path), files.remove(testFile), "Bad work in delete");
-
+        assertTrue(files.isEmpty(), "Bad work in delete, file didn't delete");
     }
 
-    @Test(dataProvider = "testFileStorage")
-    public void testGetFiles(int size, String path, String content) {
-        FileStorage testFS = new FileStorage(size);
-        ArrayList<File> files = new ArrayList<>();
-        files.add(new File(path, content));
+    @Test
+    public void testDeleteNG() {
+        assertFalse(testFS.delete(defaultFilename + "new"), "Bad work in delete, file doesn't exist, but returned true like it was deleted");
+    }
+
+    @Test
+    public void testGetFiles() {
+        assertEquals(testFS.getFiles(), testFiles, "Bad work in getFiles, didn't return list of files");
+    }
+
+    @Test
+    public void testGetFile() {
+        assertEquals(testFS.getFile(defaultFilename), testFile, "Bad work in getFile, didn't return expected file");
+    }
+
+    @Test
+    public void testGetFileNG() {
+        assertEquals(testFS.getFile(defaultFilename + "new"), null, "Bad work in getFile, file doesn't exist, but was returned");
+    }
+
+    @Test
+    public void testGetAvailableSize() {
+        assertEquals(testFS.getAvailableSize(), defaultSize, "Bad work on getAvailableSize, availableSize doesn't equal defaultSize");
+    }
+
+    @Test
+    public void testGetMaxSize() {
+        assertEquals(testFS.getMaxSize(), defaultSize, "Bad work in getMaxSize, maxSize doesn't equal defaultSize");
+    }
+
+    @Test
+    public void testDefaultConstructorOnMaxSize() {
+        FileStorage testFS = new FileStorage();
+        int maxSize = 0;
         try {
-            reflectAccess(testFS, files);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            System.out.println("Something went wrong in getFiles");
+            maxSize = ReflectAccess.getNumberByRelfectForFileStorage(testFS, "maxSize");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing default constructor FileStorage(field maxSize");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing default constructor FileStorage(field maxSize");
         }
-        assertEquals(testFS.getFiles(), files, "Bad work in getFiles");
+        assertEquals(maxSize, 100, "Bad work in default constructor FileStorage(field maxSize), maxSize doesn't equal 100");
     }
 
-    @Test(dataProvider = "testFileStorage")
-    public void testGetFile(int size, String path, String content) {
-        FileStorage testFS = new FileStorage(size);
-        ArrayList<File> files = new ArrayList<>();
-        File testFile = new File(path, content);
-        files.add(testFile);
+    @Test
+    public void testDefaultConstructorOnAvailableSize() {
+        FileStorage testFS = new FileStorage();
+        int availableSize = 0;
         try {
-            reflectAccess(testFS, files);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            System.out.println("Something went wrong in getFile");
+            availableSize = ReflectAccess.getNumberByRelfectForFileStorage(testFS, "availableSize");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing default constructor FileStorage(field availableSize)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing default constructor FileStorage(field availableSize)");
         }
-        assertEquals(testFS.getFile(path), testFile, "Bad work in getFile");
+        assertEquals(availableSize, 100, "Bad work in default constructor FileStorage(field availableSize), availableSize doesn't equal 100");
     }
-
-
-    public void reflectAccess(FileStorage testFS, ArrayList files) throws NoSuchFieldException, IllegalAccessException {
-        Field field = testFS.getClass().getDeclaredField("files");
-        field.setAccessible(true);
-        field.set(testFS, files.clone());
-    }
-
-    @DataProvider(name = "forTestingSize")
-    public static Object[][] testDataForSize() {
-        return new Object[][]{{10}};
-    }
-
-    @Test(dataProvider = "forTestingSize")
-    public void testGetAvailableSize(int size) {
-        assertEquals(new FileStorage(size).getAvailableSize(), size, "Bad work on getAvailableSize");
-    }
-
-    @Test(dataProvider = "forTestingSize")
-    public void testGetMaxSize(int size) {
-        assertEquals(new FileStorage(size).getMaxSize(), size, "Bad work in getMaxSize");
-    }
-
 
     @DataProvider(name = "forTestingConstructor")
     public static Object[][] testDataForConstructor() {
         return new Object[][]{{Integer.MAX_VALUE + 1}, {Integer.MAX_VALUE}, {10}, {0}, {-9}};
     }
 
-    public int getNumberByRelfect(FileStorage testFS, String fieldName) throws NoSuchFieldException, IllegalAccessException {
-        Field field = testFS.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        return ((Integer) field.get(testFS)).intValue();
-    }
-
-    @Test()
-    public void testDefaultConstructor() {
-        FileStorage testFS = new FileStorage();
-        int maxSize = 0, availableSize = 0;
+    @Test
+    public void testConstructorWithSizeSetMaxSize() {
+        int maxSize = 0;
         try {
-            maxSize = getNumberByRelfect(testFS, "maxSize");
-            availableSize = getNumberByRelfect(testFS, "availableSize");
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            System.out.println("Something went wrong in testing FileStorage constructor");
+            maxSize = ReflectAccess.getNumberByRelfectForFileStorage(testFS, "maxSize");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing constructor FileStorage with sizes(field maxSize)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing constructor FileStorage with sizes(field maxSize)");
         }
-        assertEquals(maxSize, 100, "Bad work in constructor FileStorage(field maxSize)");
-        assertEquals(availableSize, 100, "Bad work in constructor FileStorage(field availableSize)");
+        assertEquals(maxSize, defaultSize, "Bad work in constructor FileStorage(field maxSize), maxSize doesn't equals defaultSize");
     }
 
     @Test(dataProvider = "forTestingConstructor")
-    public void testConstructorWithSizeSetMaxSize(int size) {
+    public void testConstructorWithBadSize(int size) {
         FileStorage testFS = new FileStorage(size);
         int maxSize = 0;
         try {
-            maxSize = getNumberByRelfect(testFS, "maxSize");
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            System.out.println("Something went wrong in testing FileStorage constructor");
+            maxSize = ReflectAccess.getNumberByRelfectForFileStorage(testFS, "maxSize");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing constructor FileStorage with sizes(field maxSize)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing constructor FileStorage with sizes(field maxSize)");
         }
-        if (size > 0) {
-            assertEquals(maxSize, size, "Bad work in constructor FileStorage(field maxSize)");
-        } else {
-            fail("Size cant be less than 1");
+        assertTrue(maxSize > 0, "Bad work in constructor FileStorage with sizes(field maxSize), size cant be less than 1");
+    }
+
+    @Test
+    public void testConstructorWithSizeSetAvailableSize() {
+        int availableSize = 0;
+        try {
+            availableSize = ReflectAccess.getNumberByRelfectForFileStorage(testFS, "availableSize");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing constructor FileStorage(field availableSize)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing constructor FileStorage(field availableSize)");
         }
+        assertEquals(availableSize, defaultSize, "Bad work in constructor FileStorage(field availableSize), availableSize doesn't equals defaultSize");
     }
 
     @Test(dataProvider = "forTestingConstructor")
-    public void testConstructorWithSizeSetAvailableSize(int size) {
+    public void testConstructorWithBadSizeForAVS(int size) {
         FileStorage testFS = new FileStorage(size);
         int availableSize = 0;
         try {
-            availableSize = getNumberByRelfect(testFS, "availableSize");
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            System.out.println("Something went wrong in testing FileStorage constructor");
+            availableSize = ReflectAccess.getNumberByRelfectForFileStorage(testFS, "availableSize");
+        } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException in testing constructor FileStorage(field availableSize)");
+        } catch (NoSuchFieldException e) {
+            System.out.println("NoSuchFieldException in testing constructor FileStorage(field availableSize)");
         }
-        if (size > 0) {
-            assertEquals(availableSize, size, "Bad work in constructor FileStorage(field availableSize)");
-        } else {
-            fail("Size cant be less than 1");
-        }
+        assertTrue(availableSize > 0, "Bad work in constructor FileStorage(field availableSize), size cant be less than 1");
     }
 }
