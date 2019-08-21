@@ -100,7 +100,7 @@ public class FileStorageTest {
 
     @Test
     public void testGetFileNG() {
-        assertEquals(testFS.getFile(defaultFilename + "new"), null, "Bad work in getFile, file doesn't exist, but was returned");
+        assertNull(testFS.getFile(defaultFilename + "new"), "Bad work in getFile, file doesn't exist, but was returned");
     }
 
     @Test
