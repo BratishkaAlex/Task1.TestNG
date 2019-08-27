@@ -13,6 +13,8 @@ public class FileStorageTest {
     private File testFile;
     private ArrayList<File> testFiles;
     private int defaultSize = 10;
+    private int defaultMaxSize = 100;
+    private int defaultAvailableSize = 100;
     private String defaultFilename = "src/Files/test1.txt";
     private String defaultContent = "qwerty";
 
@@ -124,7 +126,7 @@ public class FileStorageTest {
         } catch (NoSuchFieldException e) {
             System.out.println("NoSuchFieldException in testing default constructor FileStorage(field maxSize");
         }
-        assertEquals(maxSize, 100, "Bad work in default constructor FileStorage(field maxSize), maxSize doesn't equal 100");
+        assertEquals(maxSize, defaultMaxSize, "Bad work in default constructor FileStorage(field maxSize), maxSize doesn't equal 100");
     }
 
     @Test
@@ -138,7 +140,7 @@ public class FileStorageTest {
         } catch (NoSuchFieldException e) {
             System.out.println("NoSuchFieldException in testing default constructor FileStorage(field availableSize)");
         }
-        assertEquals(availableSize, 100, "Bad work in default constructor FileStorage(field availableSize), availableSize doesn't equal 100");
+        assertEquals(availableSize, defaultAvailableSize, "Bad work in default constructor FileStorage(field availableSize), availableSize doesn't equal 100");
     }
 
     @DataProvider(name = "forTestingConstructor")
